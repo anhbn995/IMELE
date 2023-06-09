@@ -7,12 +7,12 @@ import torch.backends.cudnn as cudnn
 import torch.optim
 import loaddata
 
-import numpy as np
+# import numpy as np
 import sobel
-from models import modules, net, resnet, densenet, senet
 import cv2
 import os
 from tensorboard_logger import configure, log_value
+from models import modules, net, resnet, densenet, senet
 
 
 
@@ -28,8 +28,8 @@ parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     help='weight decay (default: 1e-4)')
 
-parser.add_argument('--data', default='adjust')
-parser.add_argument('--csv', default='')
+parser.add_argument('--data', default='adjust_ducanh')
+parser.add_argument('--csv', default=r'/home/skm/SKM/WORK/ALL_CODE/WorkSpace_SKM_DucAnh/IMELE/dataset/training_DucAnh.csv')
 parser.add_argument('--model', default='')
 
 args = parser.parse_args()
@@ -82,7 +82,7 @@ def main():
     train_loader = loaddata.getTrainingData(batch_size,args.csv)
 
     logfolder = "runs/"+args.data 
-    print(args.data)
+    # print(args.data)
     if not os.path.exists(logfolder):
        os.makedirs(logfolder)
     configure(logfolder)
@@ -119,22 +119,27 @@ def train(train_loader, model, optimizer, epoch):
 
         image, depth = sample_batched['image'], sample_batched['depth']
 
-        depth = depth.cuda(async=True)
+        # depth = depth.cuda(async=True)
+        depth = depth.to('cuda')
         image = image.cuda()
+        # print(image.shape,"*1"*100)
 
 
         image = torch.autograd.Variable(image)
+        # print(image.shape, "zzzzzzzzzz")
         depth = torch.autograd.Variable(depth)
 
         ones = torch.ones(depth.size(0), 1, depth.size(2),depth.size(3)).float().cuda()
         ones = torch.autograd.Variable(ones)
         optimizer.zero_grad()
 
+        # print(image.shape,"*"*100)
         output = model(image)
         
 
         if i%200 == 0:
             x = output[0]
+            print(x.shape)
             x = x.view([220,220])
             x = x.cpu().detach().numpy()
             x = x*100000
@@ -143,7 +148,7 @@ def train(train_loader, model, optimizer, epoch):
             x2 = x2.view([220,220])
             x2 = x2.cpu().detach().numpy()
             x2 = x2  *100000
-            print(x2)
+            # print(x2)
 
             x = x.astype('uint16')
             cv2.imwrite(args.data+str(i)+'_out.png',x)

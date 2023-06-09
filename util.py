@@ -2,7 +2,8 @@
 import torch
 import math
 import numpy as np
-from ssim import pytorch_ssim
+# from ssim import pytorch_ssim
+from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 from PIL import Image
 import cv2
 import torch
@@ -96,7 +97,8 @@ def evaluateError(output, target, idx, batches):
 
         errors['MSE'] = torch.sum(torch.pow(diffMatrix, 2)) / IMsize / batches
         errors['MAE'] = torch.sum(diffMatrix) / IMsize / batches
-        ssim_loss = pytorch_ssim.SSIM(window_size = 15)
+        # ssim_loss = pytorch_ssim.SSIM(window_size = 15)
+        ssim_loss = SSIM(win_size=15, win_sigma=1.5, data_range=255, size_average=True, channel=1)
         errors['SSIM'] = ssim_loss(_output,_target)
        
        

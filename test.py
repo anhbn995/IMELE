@@ -11,24 +11,32 @@ import sobel
 import argparse
 import cv2
 from PIL import Image
-from tensorboard_logger import configure, log_value
+# from tensorboard_logger import configure, log_value
 import pandas as pd
 import os
 import csv
 import re
+
 def main():
     model = define_model(is_resnet=False, is_densenet=False, is_senet=True)
 
     parser = argparse.ArgumentParser()
    
   
-    parser.add_argument("--model")
-    parser.add_argument("--csv")
+    # parser.add_argument("--model")
+    # parser.add_argument("--csv")
+    # parser.add_argument("--outfile")
+    # args = parser.parse_args()
+
+
+    parser.add_argument("--model", default='/home/skm/SKM/WORK/ALL_CODE/WorkSpace_SKM_DucAnh/IMELE/adjust_ducanh')
+    parser.add_argument("--csv", default="/home/skm/SKM/WORK/ALL_CODE/WorkSpace_SKM_DucAnh/IMELE/dataset/test_DucAnh.csv")
     parser.add_argument("--outfile")
     args = parser.parse_args()
 
-    md = glob.glob(args.model+'/*.tar')
 
+    md = glob.glob(args.model+'/*.tar')
+    print(md,"*"*100)
     md.sort(key=natural_keys)
   
 
@@ -36,11 +44,12 @@ def main():
         x = str(x)
 
         model = define_model(is_resnet=False, is_densenet=False, is_senet=True)
-        model = torch.nn.DataParallel(model,device_ids=[0,1]).cuda()
+        # model = torch.nn.DataParallel(model,device_ids=[0]).cuda()
+        # print("x"*100, torch.load(x))
         state_dict = torch.load(x)['state_dict']
         model.load_state_dict(state_dict)
 
-        test_loader = loaddata.getTestingData(2,args.csv)
+        test_loader = loaddata.getTestingData(1,args.csv)
         test(test_loader, model, args)
 
 
@@ -55,10 +64,12 @@ def test(test_loader, model, args):
 
     for i, sample_batched in enumerate(test_loader):
         image, depth = sample_batched['image'], sample_batched['depth']
-        depth = depth.cuda(async=True)
+        # depth = depth.cuda(async=True)
+        depth = depth.to('cuda')
         image = image.cuda()
+        print("z"*100,image.shape, type(image))
         output = model(image)
-
+        print(output.detach().cpu().numpy(), "zaaa")
         output = torch.nn.functional.interpolate(output,size=(440,440),mode='bilinear')
 
 
@@ -97,6 +108,7 @@ def test(test_loader, model, args):
 
 
 def testing_loss(depth , output, losses, batchSize):
+    # print(depth,  "zzzzzzzz")
     
     ones = torch.ones(depth.size(0), 1, depth.size(2),depth.size(3)).float().cuda()
     get_gradient = sobel.Sobel().cuda()
@@ -135,6 +147,12 @@ def define_model(is_resnet, is_densenet, is_senet):
         original_model = senet.senet154(pretrained=None)
         Encoder = modules.E_senet(original_model)
         model = net.model(Encoder, num_features=2048, block_channel = [256, 512, 1024, 2048])
+        
+        # original_model = senet.senet154(pretrained='imagenet')
+        # Encoder = modules.E_senet(original_model)
+        # model = net.model(Encoder, num_features=2048, block_channel = [256, 512, 1024, 2048])
+
+
 
     return model
 

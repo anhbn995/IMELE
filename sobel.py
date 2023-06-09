@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from torchvision.utils import save_image
+# from torchvision.utils import save_image
 class Sobel(nn.Module):
     def __init__(self):
         super(Sobel, self).__init__()
